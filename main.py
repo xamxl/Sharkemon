@@ -4,6 +4,7 @@ import json
 import datetime
 from pydantic import BaseModel
 import wikipedia
+import json
 
 class Card(BaseModel):
     name: str
@@ -11,6 +12,24 @@ class Card(BaseModel):
     dateFound: datetime.datetime
     description: str
     image_path: str
+
+class Card:
+    def __init__(self, name, port, dateFound, description, image_path):
+        self.name = name
+        self.port = port
+        self.dateFound = dateFound
+        self.description = description
+        self.image_path = image_path
+    
+    def get_json(self):
+        thisdict = {
+            "name": self.name,
+            "port": self.port,
+            "dateFound": self.dateFound.strftime("%Y-%m-%d %H:%M:%S"),
+            "description": self.description,
+            "image_path": self.image_path
+        }
+        return thisdict
 
 class CardLibrary:
     def __init__(self):
@@ -125,12 +144,29 @@ class DiscoveryPanel(wx.Panel):
         self.image.SetBitmap(wx.Bitmap(scaled))
         self.descr_ctrl.SetValue(card.description)
         self.descr_ctrl.SetInsertionPoint(0)
+    def updateCardFile(self, card):
+        #receives a card and writes it to the json file
+        f = open("cards.json")
+        cards = []
+        jsonData = json.load(f)
+        for i in jsonData["cards"]:
+            cards.append(Card(**i))
+        cards.append(card)
 
+        for i in range(len(cards)):
+            cards[i] = cards[i].get_json()
+
+        f = open("cards.json", "w")
+        data = json.dumps(cards)
+        print(cards)
+        f.write(data)
+
+        
     def on_accept(self, _):
         if self.current_card:
             self.library.add_card(self.current_card)
             self.new_cards.pop(0)
-            self.library.save_to_json()  # Save changes as soon as a card is accepted
+        self.updateCardFile(self.current_card)
         self.load_next_card()
         self.GetTopLevelParent().library_panel.refresh()
 
@@ -179,8 +215,7 @@ class MainFrame(wx.Frame):
         panel.SetSizer(sizer)
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.on_timer, self.timer)
-        self.timer.Start(10000)
-        self.Bind(wx.EVT_CLOSE, self.on_close)
+        self.timer.Start(10000)  # 10 seconds
 
     def getWikiDescription(self, name):
         name = self.getFullFromAcronym(name)
