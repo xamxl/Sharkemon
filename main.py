@@ -69,12 +69,18 @@ class DiscoveryPanel(wx.Panel):
         self.new_cards = new_cards
         self.current_card = None
         main_sizer = wx.BoxSizer(wx.VERTICAL)
-        main_sizer.Add(wx.StaticText(self, label="Discover (Queue)"), 0, wx.ALL, 5)
 
+        # Image display
         self.image = wx.StaticBitmap(self, size=(120, 120))
-        self.desc = wx.StaticText(self, label="")
-        main_sizer.Add(self.image, 0, wx.ALL | wx.CENTER, 5)
-        main_sizer.Add(self.desc, 0, wx.ALL | wx.CENTER, 5)
+        main_sizer.Add(self.image, 0, wx.ALL | wx.CENTER, 10)
+
+        # Title displaying name and port
+        self.title = wx.StaticText(self, label="")
+        main_sizer.Add(self.title, 0, wx.ALL | wx.CENTER, 10)
+
+        # Description text box (multiline & read-only)
+        self.descr_ctrl = wx.TextCtrl(self, value="", style=wx.TE_MULTILINE | wx.TE_READONLY)
+        main_sizer.Add(self.descr_ctrl, 1, wx.EXPAND | wx.ALL, 10)
 
         btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
         btn_accept = wx.Button(self, label="Accept")
@@ -94,14 +100,22 @@ class DiscoveryPanel(wx.Panel):
         else:
             self.current_card = None
             self.image.SetBitmap(wx.NullBitmap)
-            self.desc.SetLabel("No more cards to discover.")
+            self.title.SetLabel("")
+            self.descr_ctrl.SetValue("No more cards to discover.")
 
     def update_ui(self, card):
+        # Update the title with the card name and port.
+        self.title.SetLabel(f"Name: {card.name}    Port: {card.port}")
+
+        # Load, scale, and display the image.
         path = os.path.join(os.path.dirname(__file__), card.image_path)
         bmp = wx.Bitmap(path, wx.BITMAP_TYPE_ANY)
         scaled = bmp.ConvertToImage().Scale(120, 120, wx.IMAGE_QUALITY_HIGH)
         self.image.SetBitmap(wx.Bitmap(scaled))
-        self.desc.SetLabel(f"{card.name}\nPort: {card.port}\n{card.description}")
+
+        # Display the card description in the text box.
+        self.descr_ctrl.SetValue(card.description)
+        self.descr_ctrl.SetInsertionPoint(0)
 
     def on_accept(self, _):
         if self.current_card:
@@ -124,9 +138,12 @@ class CardViewerFrame(wx.Frame):
         bmp = wx.Bitmap(path, wx.BITMAP_TYPE_ANY)
         scaled = bmp.ConvertToImage().Scale(120, 120, wx.IMAGE_QUALITY_HIGH)
         img = wx.StaticBitmap(panel, bitmap=wx.Bitmap(scaled))
-        desc = wx.StaticText(panel, label=f"Name: {card.name}\nPort: {card.port}\n{card.description}")
         sizer.Add(img, 0, wx.ALL | wx.CENTER, 10)
-        sizer.Add(desc, 0, wx.ALL | wx.CENTER, 10)
+        panel.SetSizer(sizer)
+        title = wx.StaticText(panel, label=f"Name: {card.name}    Port: {card.port}")
+        sizer.Add(title, 0, wx.ALL | wx.CENTER, 10)
+        descr_ctrl = wx.TextCtrl(panel, value=card.description, style=wx.TE_MULTILINE | wx.TE_READONLY)
+        sizer.Add(descr_ctrl, 1, wx.EXPAND | wx.ALL, 10)
         panel.SetSizer(sizer)
 
 class MainFrame(wx.Frame):
