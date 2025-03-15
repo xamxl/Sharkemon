@@ -1,7 +1,11 @@
 import wx
 import os
 import datetime
+<<<<<<< Updated upstream
 from pydantic import BaseModel
+=======
+import wikipedia
+>>>>>>> Stashed changes
 
 class Card(BaseModel):
     name: str
@@ -134,11 +138,11 @@ class MainFrame(wx.Frame):
         self.library = CardLibrary()
         self.new_cards = [
             Card(name="TCP", port=443, dateFound=datetime.datetime.now(),
-                 description="I love secure communication!", image_path="images.png"),
+                 description=self.getWikiDescription("Transmission Control Protocol"), image_path="images.png"),
             Card(name="UDP", port=20, dateFound=datetime.datetime.now(),
-                 description="I'm stateless!", image_path="images.png"),
+                 description=self.getWikiDescription("User Datagram Protocol"), image_path="images.png"),
             Card(name="DNS", port=80, dateFound=datetime.datetime.now(),
-                 description="I find things", image_path="images.png"),
+                 description=self.getWikiDescription("DNS"), image_path="images.png"),
         ]
         panel = wx.Panel(self)
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -147,7 +151,46 @@ class MainFrame(wx.Frame):
         self.discovery_panel = DiscoveryPanel(self.notebook, self.library, self.new_cards)
         self.notebook.AddPage(self.library_panel, "Library")
         self.notebook.AddPage(self.discovery_panel, "Discover")
+<<<<<<< Updated upstream
         sizer.Add(self.notebook, 1, wx.EXPAND)
+=======
+        top_sizer.Add(self.notebook, 1, wx.EXPAND)
+        self.top_panel.SetSizer(top_sizer)
+
+        self.bottom_panel = self.create_viewer_panel(None)
+        self.splitter.SplitHorizontally(self.top_panel, self.bottom_panel)
+        self.splitter.SetSashPosition(self.GetSize().y, True)
+
+        main_sizer.Add(self.splitter, 1, wx.EXPAND)
+        self.main_panel.SetSizer(main_sizer)
+
+        self.notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_page_changed)
+        self.refresh_all()
+
+    def getWikiDescription(self, name):
+        #receives name, looks it up on wikipedia, and returns a description
+        desc = wikipedia.summary(name, sentences=2)
+        return desc
+
+    def create_viewer_panel(self, card):
+        panel = wx.Panel(self.splitter)
+        box = wx.StaticBox(panel)
+        sizer = wx.StaticBoxSizer(box, wx.HORIZONTAL)
+
+        img = wx.StaticBitmap(panel)
+        img.SetMinSize((120, 120))
+
+        desc = wx.StaticText(panel, label="")
+        if card:
+            path = os.path.join(os.path.dirname(__file__), card.image_path)
+            bmp = wx.Bitmap(path, wx.BITMAP_TYPE_ANY)
+            scaled = bmp.ConvertToImage().Scale(120, 120, wx.IMAGE_QUALITY_HIGH)
+            img.SetBitmap(wx.Bitmap(scaled))
+            desc.SetLabel(f"Description: {card.description}")
+
+        sizer.Add(img, 0, wx.ALL|wx.CENTER, 10)
+        sizer.Add(desc, 0, wx.ALL|wx.CENTER, 10)
+>>>>>>> Stashed changes
         panel.SetSizer(sizer)
 
     def refresh_all(self):
