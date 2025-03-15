@@ -172,6 +172,11 @@ class MainFrame(wx.Frame):
         self.notebook.AddPage(self.discovery_panel, "Discover")
         sizer.Add(self.notebook, 1, wx.EXPAND)
         panel.SetSizer(sizer)
+
+        self.timer = wx.Timer(self)
+        self.Bind(wx.EVT_TIMER, self.on_timer, self.timer)
+        self.timer.Start(10000)  # 10 seconds
+
     def getWikiDescription(self, name):
         #receives name, looks it up on wikipedia, and returns a description
         name = self.getFullFromAcronym(name)
@@ -187,6 +192,15 @@ class MainFrame(wx.Frame):
                 full = lineArr[1]
         f.close()
         return full
+    def add_new_card(self, name, port, description, image_path):
+        card = Card(name=name, port=port, dateFound=datetime.datetime.now(), description=description, image_path=image_path)
+        self.new_cards.append(card)
+        self.discovery_panel.load_next_card()
+        self.library_panel.refresh()
+
+    def on_timer(self, event):
+        # Add a new card every 10 seconds
+        self.add_new_card("New Card", 1234, "Description of new card", "images.png")
 
     def refresh_all(self):
         self.library_panel.refresh()
@@ -194,6 +208,7 @@ class MainFrame(wx.Frame):
 if __name__ == "__main__":
     app = wx.App(False)
     frame = MainFrame()
+    frame.add_new_card("TESTING", 443, "Secure communication protocol", "images.png")
     frame.Show()
     frame.refresh_all()
     app.MainLoop()
