@@ -1,5 +1,6 @@
 import wx
 import os
+import json
 import datetime
 from pydantic import BaseModel
 import wikipedia
@@ -14,10 +15,24 @@ class Card(BaseModel):
 class CardLibrary:
     def __init__(self):
         self.cards = []
+
     def add_card(self, card):
         self.cards.append(card)
+
     def get_card(self, name):
         return next((c for c in self.cards if c.name == name), None)
+
+    def save_to_json(self, filename="library_data.json"):
+        data = [card.model_dump() for card in self.cards]
+        with open(filename, "w") as f:
+            json.dump(data, f, default=str)
+
+    def load_from_json(self, filename="library_data.json"):
+        if os.path.exists(filename):
+            with open(filename, "r") as f:
+                data = json.load(f)
+                for card_data in data:
+                    self.cards.append(Card(**card_data))
 
 class LibraryPanel(wx.Panel):
     def __init__(self, parent, library):
@@ -35,7 +50,7 @@ class LibraryPanel(wx.Panel):
         self.SetSizer(sizer)
 
     def on_size(self, event):
-        event.Skip()  # Let the sizer handle the event first
+        event.Skip()
         wx.CallAfter(self.resize_column_to_full_width)
 
     def resize_column_to_full_width(self):
@@ -69,19 +84,16 @@ class DiscoveryPanel(wx.Panel):
         self.new_cards = new_cards
         self.current_card = None
         main_sizer = wx.BoxSizer(wx.VERTICAL)
-
-        # Image display
-        self.image = wx.StaticBitmap(self, size=(120, 120))
-        main_sizer.Add(self.image, 0, wx.ALL | wx.CENTER, 10)
-
-        # Title displaying name and port
-        self.title = wx.StaticText(self, label="")
-        main_sizer.Add(self.title, 0, wx.ALL | wx.CENTER, 10)
-
-        # Description text box (multiline & read-only)
-        self.descr_ctrl = wx.TextCtrl(self, value="", style=wx.TE_MULTILINE | wx.TE_READONLY)
-        main_sizer.Add(self.descr_ctrl, 1, wx.EXPAND | wx.ALL, 10)
-
+        detail_panel = wx.Panel(self)
+        detail_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.image = wx.StaticBitmap(detail_panel, size=(120, 120))
+        detail_sizer.Add(self.image, 0, wx.ALL | wx.CENTER, 10)
+        self.title = wx.StaticText(detail_panel, label="")
+        detail_sizer.Add(self.title, 0, wx.ALL | wx.CENTER, 10)
+        self.descr_ctrl = wx.TextCtrl(detail_panel, value="", style=wx.TE_MULTILINE | wx.TE_READONLY)
+        detail_sizer.Add(self.descr_ctrl, 1, wx.EXPAND | wx.ALL, 10)
+        detail_panel.SetSizer(detail_sizer)
+        main_sizer.Add(detail_panel, 1, wx.EXPAND)
         btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
         btn_accept = wx.Button(self, label="Accept")
         btn_skip = wx.Button(self, label="Skip")
@@ -102,23 +114,15 @@ class DiscoveryPanel(wx.Panel):
             self.image.SetBitmap(wx.NullBitmap)
             self.title.SetLabel("No more cards to discover.")
             self.descr_ctrl.SetValue("")
-            # hide the description box
             self.descr_ctrl.Hide()
 
     def update_ui(self, card):
-        # show the description box
         self.descr_ctrl.Show()
-        
-        # Update the title with the card name and port.
         self.title.SetLabel(f"Name: {card.name}    Port: {card.port}")
-
-        # Load, scale, and display the image.
         path = os.path.join(os.path.dirname(__file__), card.image_path)
         bmp = wx.Bitmap(path, wx.BITMAP_TYPE_ANY)
         scaled = bmp.ConvertToImage().Scale(120, 120, wx.IMAGE_QUALITY_HIGH)
         self.image.SetBitmap(wx.Bitmap(scaled))
-
-        # Display the card description in the text box.
         self.descr_ctrl.SetValue(card.description)
         self.descr_ctrl.SetInsertionPoint(0)
 
@@ -126,6 +130,7 @@ class DiscoveryPanel(wx.Panel):
         if self.current_card:
             self.library.add_card(self.current_card)
             self.new_cards.pop(0)
+            self.library.save_to_json()  # Save changes as soon as a card is accepted
         self.load_next_card()
         self.GetTopLevelParent().library_panel.refresh()
 
@@ -144,7 +149,6 @@ class CardViewerFrame(wx.Frame):
         scaled = bmp.ConvertToImage().Scale(120, 120, wx.IMAGE_QUALITY_HIGH)
         img = wx.StaticBitmap(panel, bitmap=wx.Bitmap(scaled))
         sizer.Add(img, 0, wx.ALL | wx.CENTER, 10)
-        panel.SetSizer(sizer)
         title = wx.StaticText(panel, label=f"Name: {card.name}    Port: {card.port}")
         sizer.Add(title, 0, wx.ALL | wx.CENTER, 10)
         descr_ctrl = wx.TextCtrl(panel, value=card.description, style=wx.TE_MULTILINE | wx.TE_READONLY)
@@ -155,6 +159,7 @@ class MainFrame(wx.Frame):
     def __init__(self):
         super().__init__(None, title="Card Game", size=(450, 350))
         self.library = CardLibrary()
+        self.library.load_from_json()  # Load existing cards
         self.new_cards = [
             Card(name="TCP", port=443, dateFound=datetime.datetime.now(),
                  description=self.getWikiDescription("TCP"), image_path="images.png"),
@@ -172,38 +177,42 @@ class MainFrame(wx.Frame):
         self.notebook.AddPage(self.discovery_panel, "Discover")
         sizer.Add(self.notebook, 1, wx.EXPAND)
         panel.SetSizer(sizer)
-
         self.timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.on_timer, self.timer)
-        self.timer.Start(10000)  # 10 seconds
+        self.timer.Start(10000)
+        self.Bind(wx.EVT_CLOSE, self.on_close)
 
     def getWikiDescription(self, name):
-        #receives name, looks it up on wikipedia, and returns a description
         name = self.getFullFromAcronym(name)
         desc = wikipedia.summary(name, sentences=2)
         return desc
+
     def getFullFromAcronym(self, acronym):
-        #recieves an acronym and looks it up in a .csv file from wikipedia, returns full name if it exists, otherwise returns acronym
         f = open("abiTranslations.csv")
         full = acronym
         for line in f:
             lineArr = line.split(",")
-            if (lineArr[0] == acronym):
+            if lineArr[0] == acronym:
                 full = lineArr[1]
         f.close()
         return full
+
     def add_new_card(self, name, port, description, image_path):
-        card = Card(name=name, port=port, dateFound=datetime.datetime.now(), description=description, image_path=image_path)
+        card = Card(name=name, port=port, dateFound=datetime.datetime.now(),
+                    description=description, image_path=image_path)
         self.new_cards.append(card)
         self.discovery_panel.load_next_card()
         self.library_panel.refresh()
 
     def on_timer(self, event):
-        # Add a new card every 10 seconds
         self.add_new_card("New Card", 1234, "Description of new card", "images.png")
 
     def refresh_all(self):
         self.library_panel.refresh()
+
+    def on_close(self, event):
+        self.library.save_to_json()  # Final save on exit
+        self.Destroy()
 
 if __name__ == "__main__":
     app = wx.App(False)
