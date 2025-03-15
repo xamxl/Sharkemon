@@ -12,6 +12,24 @@ class Card(BaseModel):
     description: str
     image_path: str
 
+class Card:
+    def __init__(self, name, port, dateFound, description, image_path):
+        self.name = name
+        self.port = port
+        self.dateFound = dateFound
+        self.description = description
+        self.image_path = image_path
+    
+    def get_json(self):
+        thisdict = {
+            "name": self.name,
+            "port": self.port,
+            "dateFound": self.dateFound.strftime("%Y-%m-%d %H:%M:%S"),
+            "description": self.description,
+            "image_path": self.image_path
+        }
+        return thisdict
+
 class CardLibrary:
     def __init__(self):
         self.cards = []
@@ -130,8 +148,13 @@ class DiscoveryPanel(wx.Panel):
         for i in jsonData["cards"]:
             cards.append(Card(**i))
         cards.append(card)
+
+        for i in range(len(cards)):
+            cards[i] = cards[i].get_json()
+
         f = open("cards.json", "w")
-        data = json.dumps(jsonData)
+        data = json.dumps(cards)
+        print(cards)
         f.write(data)
 
         
