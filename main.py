@@ -135,9 +135,9 @@ class MainFrame(wx.Frame):
         self.library = CardLibrary()
         self.new_cards = [
             Card(name="TCP", port=443, dateFound=datetime.datetime.now(),
-                 description=self.getWikiDescription("Transmission Control Protocol"), image_path="images.png"),
+                 description=self.getWikiDescription("TCP"), image_path="images.png"),
             Card(name="UDP", port=20, dateFound=datetime.datetime.now(),
-                 description=self.getWikiDescription("User Datagram Protocol"), image_path="images.png"),
+                 description=self.getWikiDescription("UDP"), image_path="images.png"),
             Card(name="DNS", port=80, dateFound=datetime.datetime.now(),
                  description=self.getWikiDescription("DNS"), image_path="images.png"),
         ]
@@ -152,8 +152,19 @@ class MainFrame(wx.Frame):
         panel.SetSizer(sizer)
     def getWikiDescription(self, name):
         #receives name, looks it up on wikipedia, and returns a description
+        name = self.getFullFromAcronym(name)
         desc = wikipedia.summary(name, sentences=2)
         return desc
+    def getFullFromAcronym(self, acronym):
+        #recieves an acronym and looks it up in a .csv file from wikipedia, returns full name if it exists, otherwise returns acronym
+        f = open("abiTranslations.csv")
+        full = acronym
+        for line in f:
+            lineArr = line.split(",")
+            if (lineArr[0] == acronym):
+                full = lineArr[1]
+        f.close()
+        return full
 
     def refresh_all(self):
         self.library_panel.refresh()
