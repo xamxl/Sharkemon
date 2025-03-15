@@ -1,11 +1,19 @@
 import wx
 import os
+from pydantic import BaseModel
+import datetime
 
-class Card:
-    def __init__(self, name, image_path, description):
-        self.name = name
-        self.image_path = image_path
-        self.description = description
+class Card(BaseModel):
+    name: str #this is the protocol
+    port: int
+    dateFound: datetime.datetime
+    description: str
+    image_path: str
+    #def __init__(self, name, image_path, description):
+    #    self.name = name
+    #    self.image_path = image_path
+    #    self.description = description
+        
 
 class CardLibrary:
     def __init__(self):
@@ -102,9 +110,9 @@ class MainFrame(wx.Frame):
         super().__init__(None, title="Card Game - Single Window", size=(800, 400))
         self.library = CardLibrary()
         self.new_cards = [
-            Card("Fire Card", "images.png", "Burn foes."),
-            Card("Water Card", "images.png", "Douse flames."),
-            Card("Earth Card", "images.png", "Solid defense."),
+            Card(name="TCP", port=443, dateFound=datetime.datetime.now(), description="I love secure communication!", image_path="images.png"),
+            Card(name="UDP", port=20, dateFound=datetime.datetime.now(), description="I'm stateless!", image_path="images.png"),
+            Card(name="DNS", port=80, dateFound=datetime.datetime.now(), description="I find things", image_path="images.png"),
         ]
 
         self.main_panel = wx.Panel(self)
