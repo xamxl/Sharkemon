@@ -4,16 +4,11 @@ from pydantic import BaseModel
 import datetime
 
 class Card(BaseModel):
-    name: str #this is the protocol
+    name: str
     port: int
     dateFound: datetime.datetime
     description: str
     image_path: str
-    #def __init__(self, name, image_path, description):
-    #    self.name = name
-    #    self.image_path = image_path
-    #    self.description = description
-        
 
 class CardLibrary:
     def __init__(self):
@@ -103,36 +98,31 @@ class MainFrame(wx.Frame):
         super().__init__(None, title="Card Game - Single Window", size=(600, 400))
         self.library = CardLibrary()
         self.new_cards = [
-            Card(name="TCP", port=443, dateFound=datetime.datetime.now(), description="I love secure communication!", image_path="images.png"),
-            Card(name="UDP", port=20, dateFound=datetime.datetime.now(), description="I'm stateless!", image_path="images.png"),
-            Card(name="DNS", port=80, dateFound=datetime.datetime.now(), description="I find things", image_path="images.png"),
+            Card(name="TCP", port=443, dateFound=datetime.datetime.now(),
+                 description="I love secure communication!", image_path="images.png"),
+            Card(name="UDP", port=20, dateFound=datetime.datetime.now(),
+                 description="I'm stateless!", image_path="images.png"),
+            Card(name="DNS", port=80, dateFound=datetime.datetime.now(),
+                 description="I find things", image_path="images.png"),
         ]
         self.main_panel = wx.Panel(self)
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         self.splitter = wx.SplitterWindow(self.main_panel, style=wx.SP_LIVE_UPDATE)
         self.splitter.SetSashGravity(0.5)
 
-        top_panel = wx.Panel(self.splitter)
+        # Keep references so we can replace bottom_panel on each new view
+        self.top_panel = wx.Panel(self.splitter)
         top_sizer = wx.BoxSizer(wx.VERTICAL)
-        self.notebook = wx.Notebook(top_panel)
+        self.notebook = wx.Notebook(self.top_panel)
         self.library_panel = LibraryPanel(self.notebook, self.library, self.show_card)
         self.discovery_panel = DiscoveryPanel(self.notebook, self.library, self.new_cards, self.show_card)
         self.notebook.AddPage(self.library_panel, "Library")
         self.notebook.AddPage(self.discovery_panel, "Discover")
         top_sizer.Add(self.notebook, 1, wx.EXPAND)
-        top_panel.SetSizer(top_sizer)
+        self.top_panel.SetSizer(top_sizer)
 
-        bottom_panel = wx.Panel(self.splitter)
-        box = wx.StaticBox(bottom_panel, label="Card Viewer")
-        viewer_sizer = wx.StaticBoxSizer(box, wx.HORIZONTAL)
-        self.img_ctrl = wx.StaticBitmap(bottom_panel)
-        self.img_ctrl.SetMinSize((120, 120))
-        self.desc_text = wx.StaticText(bottom_panel, label="")
-        viewer_sizer.Add(self.img_ctrl, 0, wx.ALL|wx.CENTER, 10)
-        viewer_sizer.Add(self.desc_text, 0, wx.ALL|wx.CENTER, 10)
-        bottom_panel.SetSizer(viewer_sizer)
-
-        self.splitter.SplitHorizontally(top_panel, bottom_panel)
+        self.bottom_panel = self.create_viewer_panel(None)
+        self.splitter.SplitHorizontally(self.top_panel, self.bottom_panel)
         self.splitter.SetSashPosition(self.GetSize().y, True)
 
         main_sizer.Add(self.splitter, 1, wx.EXPAND)
@@ -141,27 +131,45 @@ class MainFrame(wx.Frame):
         self.notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_page_changed)
         self.refresh_all()
 
+    def create_viewer_panel(self, card):
+        panel = wx.Panel(self.splitter)
+        box = wx.StaticBox(panel, label="Card Viewer")
+        sizer = wx.StaticBoxSizer(box, wx.HORIZONTAL)
+
+        img = wx.StaticBitmap(panel)
+        img.SetMinSize((120, 120))
+
+        desc = wx.StaticText(panel, label="")
+        if card:
+            path = os.path.join(os.path.dirname(__file__), card.image_path)
+            bmp = wx.Bitmap(path, wx.BITMAP_TYPE_ANY)
+            scaled = bmp.ConvertToImage().Scale(120, 120, wx.IMAGE_QUALITY_HIGH)
+            img.SetBitmap(wx.Bitmap(scaled))
+            desc.SetLabel(f"Description: {card.description}")
+
+        sizer.Add(img, 0, wx.ALL|wx.CENTER, 10)
+        sizer.Add(desc, 0, wx.ALL|wx.CENTER, 10)
+        panel.SetSizer(sizer)
+        return panel
+
     def refresh_all(self):
         self.library_panel.refresh()
         self.discovery_panel.refresh()
 
     def show_card(self, card):
-        full_path = os.path.join(os.path.dirname(__file__), card.image_path)
-        bitmap = wx.Bitmap(full_path, wx.BITMAP_TYPE_ANY)
-        scaled = bitmap.ConvertToImage().Scale(120, 120, wx.IMAGE_QUALITY_HIGH)
-        self.img_ctrl.SetBitmap(wx.Bitmap(scaled))
-        self.img_ctrl.SetMinSize((120, 120))
-        self.img_ctrl.SetSize((120, 120))
-        self.img_ctrl.SetMaxSize((120, 120))
-
-        self.desc_text.SetLabel(f"Description: {card.description}")
+        self.splitter.Unsplit()
+        self.bottom_panel.Destroy()
+        self.bottom_panel = self.create_viewer_panel(card)
+        self.splitter.SplitHorizontally(self.top_panel, self.bottom_panel)
         self.splitter.SetSashPosition(self.GetSize().y // 2, True)
 
     def on_page_changed(self, event):
         self.library_panel.listbox.SetSelection(wx.NOT_FOUND)
         self.discovery_panel.listbox.SetSelection(wx.NOT_FOUND)
-        self.img_ctrl.SetBitmap(wx.NullBitmap)
-        self.desc_text.SetLabel("")
+        self.splitter.Unsplit()
+        self.bottom_panel.Destroy()
+        self.bottom_panel = self.create_viewer_panel(None)
+        self.splitter.SplitHorizontally(self.top_panel, self.bottom_panel)
         self.splitter.SetSashPosition(self.GetSize().y, True)
         event.Skip()
 
