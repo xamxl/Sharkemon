@@ -131,7 +131,8 @@ class DiscoveryPanel(wx.Panel):
             cards.append(Card(**i))
         cards.append(card)
         f = open("cards.json", "w")
-        
+        data = json.dumps(jsonData)
+        f.write(data)
 
         
     def on_accept(self, _):
