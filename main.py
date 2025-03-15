@@ -95,7 +95,7 @@ class DiscoveryPanel(wx.Panel):
 
 class MainFrame(wx.Frame):
     def __init__(self):
-        super().__init__(None, title="Card Game - Single Window", size=(600, 400))
+        super().__init__(None, title="Card Game - Single Window", size=(375, 400))
         self.library = CardLibrary()
         self.new_cards = [
             Card(name="TCP", port=443, dateFound=datetime.datetime.now(),
@@ -133,7 +133,7 @@ class MainFrame(wx.Frame):
 
     def create_viewer_panel(self, card):
         panel = wx.Panel(self.splitter)
-        box = wx.StaticBox(panel, label="Card Viewer")
+        box = wx.StaticBox(panel)
         sizer = wx.StaticBoxSizer(box, wx.HORIZONTAL)
 
         img = wx.StaticBitmap(panel)
