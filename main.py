@@ -1,60 +1,162 @@
 import wx
-from card_library import CardLibrary
-from discovery import DiscoveryFrame
-from card_view import CardViewFrame
+import os
+
+class Card:
+    def __init__(self, name, image_path, description):
+        self.name = name
+        self.image_path = image_path
+        self.description = description
+
+class CardLibrary:
+    def __init__(self):
+        self.cards = []
+
+    def add_card(self, card):
+        self.cards.append(card)
+
+    def get_card(self, name):
+        for c in self.cards:
+            if c.name == name:
+                return c
+        return None
+
+class LibraryPanel(wx.Panel):
+    def __init__(self, parent, library, on_view_callback):
+        super().__init__(parent)
+        self.library = library
+        self.on_view = on_view_callback
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        lbl = wx.StaticText(self, label="My Library")
+        self.listbox = wx.ListBox(self, style=wx.LB_SINGLE)
+        sizer.Add(lbl, 0, wx.ALL, 5)
+        sizer.Add(self.listbox, 1, wx.ALL|wx.EXPAND, 5)
+        self.SetSizer(sizer)
+
+        self.listbox.Bind(wx.EVT_LISTBOX, self.on_select)
+
+    def refresh(self):
+        self.listbox.Clear()
+        for c in self.library.cards:
+            self.listbox.Append(c.name)
+
+    def on_select(self, event):
+        selection = event.GetString()
+        card = self.library.get_card(selection)
+        if card:
+            self.on_view(card)
+
+class DiscoveryPanel(wx.Panel):
+    def __init__(self, parent, library, new_cards, on_view_callback):
+        super().__init__(parent)
+        self.library = library
+        self.new_cards = new_cards
+        self.on_view = on_view_callback
+
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        lbl = wx.StaticText(self, label="Discover New Cards")
+        self.listbox = wx.ListBox(self, style=wx.LB_SINGLE)
+        btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.btn_accept = wx.Button(self, label="Accept")
+        self.btn_skip = wx.Button(self, label="Skip")
+        btn_sizer.Add(self.btn_accept, 0, wx.ALL, 5)
+        btn_sizer.Add(self.btn_skip, 0, wx.ALL, 5)
+
+        main_sizer.Add(lbl, 0, wx.ALL, 5)
+        main_sizer.Add(self.listbox, 1, wx.ALL|wx.EXPAND, 5)
+        main_sizer.Add(btn_sizer, 0, wx.CENTER)
+        self.SetSizer(main_sizer)
+
+        self.listbox.Bind(wx.EVT_LISTBOX, self.on_select)
+        self.btn_accept.Bind(wx.EVT_BUTTON, self.on_accept)
+        self.btn_skip.Bind(wx.EVT_BUTTON, self.on_skip)
+
+    def refresh(self):
+        self.listbox.Clear()
+        for c in self.new_cards:
+            self.listbox.Append(c.name)
+
+    def on_select(self, event):
+        idx = self.listbox.GetSelection()
+        if idx != wx.NOT_FOUND:
+            card = self.new_cards[idx]
+            self.on_view(card)
+
+    def on_accept(self, event):
+        idx = self.listbox.GetSelection()
+        if idx != wx.NOT_FOUND:
+            card = self.new_cards.pop(idx)
+            self.library.add_card(card)
+            self.refresh()
+            self.GetTopLevelParent().refresh_all()
+
+    def on_skip(self, event):
+        idx = self.listbox.GetSelection()
+        if idx != wx.NOT_FOUND:
+            self.new_cards.pop(idx)
+            self.refresh()
+            self.GetTopLevelParent().refresh_all()
 
 class MainFrame(wx.Frame):
     def __init__(self):
-        super().__init__(None, title="Card Game", size=(600,400))
-        panel = wx.Panel(self)
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        super().__init__(None, title="Card Game - Single Window", size=(800, 400))
+        self.library = CardLibrary()
+        self.new_cards = [
+            Card("Fire Card", "images.png", "Burn foes."),
+            Card("Water Card", "images.png", "Douse flames."),
+            Card("Earth Card", "images.png", "Solid defense."),
+        ]
 
-        library_btn = wx.Button(panel, label="Open Library")
-        discovery_btn = wx.Button(panel, label="Discover Cards")
-        sizer.Add(library_btn, 0, wx.ALL, 5)
-        sizer.Add(discovery_btn, 0, wx.ALL, 5)
-        panel.SetSizer(sizer)
+        self.main_panel = wx.Panel(self)
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
 
-        library_btn.Bind(wx.EVT_BUTTON, self.on_library)
-        discovery_btn.Bind(wx.EVT_BUTTON, self.on_discovery)
+        self.notebook = wx.Notebook(self.main_panel)
+        self.library_panel = LibraryPanel(self.notebook, self.library, self.show_card)
+        self.discovery_panel = DiscoveryPanel(self.notebook, self.library, self.new_cards, self.show_card)
+        self.notebook.AddPage(self.library_panel, "Library")
+        self.notebook.AddPage(self.discovery_panel, "Discover")
+        main_sizer.Add(self.notebook, 1, wx.EXPAND|wx.ALL, 5)
 
-        self.library_frame = None
-        self.discovery_frame = None
-        self.card_library = CardLibrary()
+        self.viewer_panel = wx.Panel(self.main_panel, size=(-1, 140))
+        box = wx.StaticBox(self.viewer_panel, label="Card Viewer")
+        viewer_sizer = wx.StaticBoxSizer(box, wx.HORIZONTAL)
+        self.img_ctrl = wx.StaticBitmap(self.viewer_panel)
+        self.desc_text = wx.StaticText(self.viewer_panel, label="")
+        viewer_sizer.Add(self.img_ctrl, 0, wx.ALL|wx.CENTER, 10)
+        viewer_sizer.Add(self.desc_text, 0, wx.ALL|wx.CENTER, 10)
+        self.viewer_panel.SetSizer(viewer_sizer)
+        main_sizer.Add(self.viewer_panel, 0, wx.EXPAND|wx.ALL, 5)
 
-    def on_library(self, event):
-        if not self.library_frame:
-            self.library_frame = wx.Frame(self, title="My Card Library", size=(400,300))
-            p = wx.Panel(self.library_frame)
-            box = wx.BoxSizer(wx.VERTICAL)
-            self.card_list = wx.ListBox(p)
-            self.view_button = wx.Button(p, label="View Card")
-            box.Add(self.card_list, 1, wx.ALL|wx.EXPAND, 5)
-            box.Add(self.view_button, 0, wx.ALL, 5)
-            p.SetSizer(box)
+        self.main_panel.SetSizer(main_sizer)
+        self.notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_page_changed)
+        self.viewer_panel.Hide()
+        self.refresh_all()
 
-            self.view_button.Bind(wx.EVT_BUTTON, self.on_view_library_card)
-            self.refresh_library()
-        self.library_frame.Show()
+    def refresh_all(self):
+        self.library_panel.refresh()
+        self.discovery_panel.refresh()
 
-    def refresh_library(self):
-        self.card_list.Clear()
-        for c in self.card_library.cards:
-            self.card_list.Append(c.name)
+    def show_card(self, card):
+        full_path = os.path.join(os.path.dirname(__file__), card.image_path)
+        if not os.path.exists(full_path):
+            self.img_ctrl.SetBitmap(wx.NullBitmap)
+        else:
+            img = wx.Image(full_path, wx.BITMAP_TYPE_ANY)
+            bmp = img.Scale(120, 120).ConvertToBitmap()
+            self.img_ctrl.SetBitmap(bmp)
+        self.desc_text.SetLabel(card.description)
+        self.viewer_panel.Show()
+        # Important to lay out the entire frame so the panel becomes visible
+        self.Layout()
 
-    def on_view_library_card(self, event):
-        i = self.card_list.GetSelection()
-        if i != wx.NOT_FOUND:
-            name = self.card_list.GetString(i)
-            card = self.card_library.get_card(name)
-            if card:
-                view = CardViewFrame(self.library_frame, card)
-                view.Show()
-
-    def on_discovery(self, event):
-        if not self.discovery_frame:
-            self.discovery_frame = DiscoveryFrame(self, self.card_library)
-        self.discovery_frame.Show()
+    def on_page_changed(self, event):
+        self.library_panel.listbox.SetSelection(wx.NOT_FOUND)
+        self.discovery_panel.listbox.SetSelection(wx.NOT_FOUND)
+        self.img_ctrl.SetBitmap(wx.NullBitmap)
+        self.desc_text.SetLabel("")
+        self.viewer_panel.Hide()
+        self.Layout()
+        event.Skip()
 
 if __name__ == "__main__":
     app = wx.App(False)
