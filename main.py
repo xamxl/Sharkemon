@@ -100,10 +100,15 @@ class DiscoveryPanel(wx.Panel):
         else:
             self.current_card = None
             self.image.SetBitmap(wx.NullBitmap)
-            self.title.SetLabel("")
-            self.descr_ctrl.SetValue("No more cards to discover.")
+            self.title.SetLabel("No more cards to discover.")
+            self.descr_ctrl.SetValue("")
+            # hide the description box
+            self.descr_ctrl.Hide()
 
     def update_ui(self, card):
+        # show the description box
+        self.descr_ctrl.Show()
+        
         # Update the title with the card name and port.
         self.title.SetLabel(f"Name: {card.name}    Port: {card.port}")
 
