@@ -1,0 +1,190 @@
+
+[
+  {
+    "id": "FTP",
+    "name": "FTP",
+    "full_name": "File Transfer Protocol",
+    "wikipedia_title": "File Transfer Protocol",
+    "matches": [
+      "TCP:20",
+      "TCP:21"
+    ],
+    "rarity": "common"
+  },
+  {
+    "id": "SSH",
+    "name": "SSH",
+    "full_name": "Secure Shell",
+    "wikipedia_title": "Secure_Shell",
+    "matches": [
+      "TCP:22"
+    ],
+    "rarity": "common"
+  },
+  {
+    "name": "Telnet",
+    "full_name": "Telnet",
+    "wikipedia_title": "Telnet",
+    "matches": [
+      "TCP:23"
+    ],
+    "id": "telnet",
+    "rarity": "common"
+  },
+  {
+    "name": "DNS",
+    "full_name": "Domain Name System",
+    "wikipedia_title": "Domain Name System",
+    "matches": [
+      "TCP:53",
+      "UDP:53"
+    ],
+    "id": "DNS",
+    "rarity": "common"
+  },
+  {
+    "name": "DHCP",
+    "full_name": "Dynamic Host Configuration Protocol",
+    "wikipedia_title": "Dynamic Host Configuration Protocol",
+    "matches": [
+      "UDP:67"
+    ],
+    "id": "DHCP",
+    "rarity": "common"
+  },
+  {
+    "name": "DHCPv6",
+    "full_name": "Dynamic Host Configuration Protocol version 6",
+    "wikipedia_title": "DHCPv6",
+    "matches": [
+      "UDP:547"
+    ],
+    "id": "DHCPv6",
+    "rarity": "common"
+  },
+  {
+    "name": "HTTP (HTTP/1.x, HTTP/2)",
+    "full_name": "Hypertext Transfer Protocol",
+    "wikipedia_title": "HTTP",
+    "matches": [
+      "TCP:80"
+    ],
+    "id": "HTTP",
+    "rarity": "common"
+  },
+  {
+    "name": "HTTP (QUIC, aka HTTP/3)",
+    "full_name": "Hypertext Transfer Protocol version 3 (Quick UDP Internet Connections)",
+    "wikipedia_title": "QUIC",
+    "matches": [
+      "UDP:80"
+    ],
+    "id": "HTTP-QUIC",
+    "rarity": "common"
+  },
+  {
+    "name": "TFTP",
+    "full_name": "Trivial File Transfer Protocol",
+    "wikipedia_title": "Trivial File Transfer Protocol",
+    "matches": [
+      "UDP:69"
+    ],
+    "id": "TFTP",
+    "rarity": "common"
+  },
+  {
+    "name": "HTTPS (HTTP/1.x, HTTP/2)",
+    "full_name": "Hypertext Transfer Protocol Secure",
+    "wikipedia_title": "HTTPS",
+    "matches": [
+      "TCP:443"
+    ],
+    "id": "HTTPS",
+    "rarity": "common"
+  },
+  {
+    "name": "HTTPS (QUIC, aka HTTP/3)",
+    "full_name": "Hypertext Transfer Protocol Secure version 3 (Quick UDP Internet Connections)",
+    "wikipedia_title": "QUIC",
+    "matches": [
+      "UDP:443"
+    ],
+    "id": "HTTPS-QUIC",
+    "rarity": "common"
+  },
+  {
+    "name": "POP (POP2, POP3)",
+    "full_name": "Post Office Protocol (2, 3)",
+    "wikipedia_title": "Post Office Protocol",
+    "matches": [
+      "TCP:109",
+      "TCP:110"
+    ],
+    "id": "POP",
+    "rarity": "common"
+  },
+  {
+    "name": "NTP",
+    "full_name": "Network Time Protocol",
+    "wikipedia_title": "Network Time Protocol",
+    "matches": [
+      "UDP:123"
+    ],
+    "id": "NTP",
+    "rarity": "common"
+  },
+  {
+    "name": "IRC",
+    "full_name": "Internet Relay Chat",
+    "wikipedia_title": "IRC",
+    "matches": [
+      "TCP:194",
+      "UDP:194"
+    ],
+    "id": "IRC",
+    "rarity": "common"
+  },
+  {
+    "name": "IMAP",
+    "full_name": "Internet Message Access Protocol",
+    "wikipedia_title": "Internet Message Access Protocol",
+    "matches": [
+      "TCP:220",
+      "UDP:220"
+    ],
+    "id": "IMAP",
+    "rarity": "common"
+  },
+  {
+    "name": "IMAP",
+    "full_name": "Internet Message Access Protocol",
+    "wikipedia_title": "Internet Message Access Protocol",
+    "matches": [
+      "TCP:220",
+      "UDP:220"
+    ],
+    "id": "IMAP",
+    "rarity": "common"
+  },
+  {
+    "name": "IPP",
+    "full_name": "Internet Printing Protocol",
+    "wikipedia_title": "Internet Printing Protocol",
+    "matches": [
+      "TCP:631",
+      "UDP:631"
+    ],
+    "id": "IPP",
+    "rarity": "common"
+  },
+  {
+    "name": "mDNS",
+    "full_name": "Multicast Domain Name System",
+    "wikipedia_title": "Multicast DNS",
+    "matches": [
+      "UDP:5353"
+    ],
+    "id": "mDNS",
+    "rarity": "common"
+  }
+]
